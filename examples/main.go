@@ -18,14 +18,14 @@ func main() {
 	// Example 1: Using factory method with Lark
 	fmt.Println("=== Example 1: Lark (Feishu) ===")
 	larkConfig := &lark.Config{
-		AppID:     "cli_a3b23fdb2438d00c",
-		AppSecret: "fAX5un2l0S9ZcuIjoruDie1ilrKWYoDJ",
+		AppID:     "appID",
+		AppSecret: "appSecret",
 	}
 	larkClient, err := imparrot.NewIMClient(imparrot.PlatformLark, larkConfig)
 	if err != nil {
 		log.Printf("Failed to create Lark client: %v", err)
 	} else {
-		userOpenID := "ou_9b1df8208ac284e95151b6e938115234" // 请在飞书后台获取真实的 open_id
+		userOpenID := "ou_openID" // 请在飞书后台获取真实的 open_id
 
 		msg := &types.Message{
 			Type:    types.MessageTypeText,

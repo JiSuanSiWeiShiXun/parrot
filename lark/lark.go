@@ -187,22 +187,30 @@ func (c *Client) SendMessage(ctx context.Context, msg *types.Message, opts *type
 
 	// Build message content based on type
 	var content string
+	var msgType string
 	switch msg.Type {
 	case types.MessageTypeText:
 		contentMap := map[string]string{"text": msg.Content}
 		contentBytes, _ := json.Marshal(contentMap)
 		content = string(contentBytes)
+		msgType = "text"
 	case types.MessageTypeMarkdown:
 		contentMap := map[string]string{"text": msg.Content}
 		contentBytes, _ := json.Marshal(contentMap)
 		content = string(contentBytes)
+		msgType = "post"
+	case types.MessageTypeCard:
+		// Interactive card - content should be the card JSON
+		content = msg.Content
+		msgType = "interactive"
 	default:
 		content = msg.Content
+		msgType = string(msg.Type)
 	}
 
 	reqBody := map[string]interface{}{
 		"receive_id": opts.Target,
-		"msg_type":   string(msg.Type),
+		"msg_type":   msgType,
 		"content":    content,
 	}
 
