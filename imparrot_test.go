@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	imparrot "github.com/youling/im-parrot"
-	"github.com/youling/im-parrot/telegram"
+	imparrot "github.com/JiSuanSiWeiShiXun/parrot"
+	"github.com/JiSuanSiWeiShiXun/parrot/telegram"
 )
 
 // TestStrategyPattern demonstrates the strategy pattern

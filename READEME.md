@@ -33,7 +33,7 @@ client, err := imparrot.NewIMClient(imparrot.PlatformLark, config)
 ## 安装
 
 ```bash
-go get github.com/youling/im-parrot
+go get github.com/JiSuanSiWeiShiXun/parrot
 ```
 
 ## 快速开始
@@ -42,7 +42,7 @@ go get github.com/youling/im-parrot
 
 ```go
 import (
-    imparrot "github.com/youling/im-parrot"
+    imparrot "github.com/JiSuanSiWeiShiXun/parrot"
 )
 
 // 使用便捷方法
@@ -104,7 +104,7 @@ err = client.SendMessage(context.Background(), msg, opts)
 ### 4. 企业微信 (WeChat Work)
 
 ```go
-import "github.com/youling/im-parrot/wechat"
+import "github.com/JiSuanSiWeiShiXun/parrot/wechat"
 
 config := &wechat.Config{
     CorpID:     "corp-id",
@@ -129,8 +129,8 @@ err = client.SendPrivateMessage(context.Background(), "user-id", msg)
 
 ```go
 import (
-    imparrot "github.com/youling/im-parrot"
-    "github.com/youling/im-parrot/lark"
+    imparrot "github.com/JiSuanSiWeiShiXun/parrot"
+    "github.com/JiSuanSiWeiShiXun/parrot/lark"
 )
 
 // 创建配置

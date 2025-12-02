@@ -7,8 +7,10 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"sync"
+	"time"
 
-	"github.com/youling/im-parrot/types"
+	"github.com/JiSuanSiWeiShiXun/parrot/types"
 )
 
 const (
@@ -39,13 +41,18 @@ func (c *Config) GetPlatform() string {
 type Client struct {
 	config     *Config
 	httpClient *http.Client
+	ownsHTTP   bool // Whether the client owns the http.Client and should close it
 	apiURL     string
+	closed     bool
+	closedMu   sync.RWMutex
 }
 
 // NewClient creates a new Telegram bot client
 func NewClient(config *Config, httpClient *http.Client) (*Client, error) {
+	ownsHTTP := false
 	if httpClient == nil {
-		httpClient = &http.Client{}
+		httpClient = &http.Client{Timeout: 30 * time.Second}
+		ownsHTTP = true
 	}
 
 	baseURL := config.BaseURL
@@ -56,6 +63,7 @@ func NewClient(config *Config, httpClient *http.Client) (*Client, error) {
 	return &Client{
 		config:     config,
 		httpClient: httpClient,
+		ownsHTTP:   ownsHTTP,
 		apiURL:     baseURL + config.BotToken,
 	}, nil
 }
@@ -147,4 +155,23 @@ func (c *Client) SendGroupMessage(ctx context.Context, groupID string, msg *type
 		ChatType: types.ChatTypeGroup,
 		Target:   groupID,
 	})
+}
+
+// Close releases all resources held by the client
+func (c *Client) Close() error {
+	c.closedMu.Lock()
+	defer c.closedMu.Unlock()
+
+	if c.closed {
+		return nil
+	}
+
+	c.closed = true
+
+	// Close HTTP client connections if we own it
+	if c.ownsHTTP && c.httpClient != nil {
+		c.httpClient.CloseIdleConnections()
+	}
+
+	return nil
 }

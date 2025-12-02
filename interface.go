@@ -1,7 +1,7 @@
 package imparrot
 
 import (
-	"github.com/youling/im-parrot/types"
+	"github.com/JiSuanSiWeiShiXun/parrot/types"
 )
 
 // Re-export types for convenience

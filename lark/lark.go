@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/youling/im-parrot/types"
+	"github.com/JiSuanSiWeiShiXun/parrot/types"
 )
 
 const (
@@ -53,20 +53,26 @@ func (c *Config) GetPlatform() string {
 type Client struct {
 	config      *Config
 	httpClient  *http.Client
+	ownsHTTP    bool // Whether the client owns the http.Client and should close it
 	token       string
 	tokenMu     sync.RWMutex
 	tokenExpiry time.Time
+	closed      bool
+	closedMu    sync.RWMutex
 }
 
 // NewClient creates a new Lark client
 func NewClient(config *Config, httpClient *http.Client) (*Client, error) {
+	ownsHTTP := false
 	if httpClient == nil {
 		httpClient = &http.Client{Timeout: 30 * time.Second}
+		ownsHTTP = true
 	}
 
 	client := &Client{
 		config:     config,
 		httpClient: httpClient,
+		ownsHTTP:   ownsHTTP,
 	}
 
 	// Get initial access token only if not in webhook mode
@@ -459,4 +465,28 @@ func (c *Client) GetOpenIDByEmail(ctx context.Context, email string) (string, er
 	}
 
 	return apiResp.Data.UserList[0].UserID, nil
+}
+
+// Close releases all resources held by the client
+func (c *Client) Close() error {
+	c.closedMu.Lock()
+	defer c.closedMu.Unlock()
+
+	if c.closed {
+		return nil
+	}
+
+	c.closed = true
+
+	// Close HTTP client connections if we own it
+	if c.ownsHTTP && c.httpClient != nil {
+		c.httpClient.CloseIdleConnections()
+	}
+
+	// Clear token
+	c.tokenMu.Lock()
+	c.token = ""
+	c.tokenMu.Unlock()
+
+	return nil
 }

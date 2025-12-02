@@ -48,6 +48,10 @@ type IMParrot interface {
 
 	// GetPlatformName returns the platform name
 	GetPlatformName() string
+
+	// Close releases all resources held by the client
+	// Should be called when the client is no longer needed to prevent resource leaks
+	Close() error
 }
 
 // Config is the interface for platform configurations

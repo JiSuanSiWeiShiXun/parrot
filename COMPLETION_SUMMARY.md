@@ -126,7 +126,7 @@ PS C:\youling\projects\im-parrot> go test -v
 === RUN   TestSendOptions
 --- PASS: TestSendOptions (0.00s)
 PASS
-ok      github.com/youling/im-parrot    0.170s
+ok      github.com/JiSuanSiWeiShiXun/parrot    0.170s
 
 # 构建示例程序
 PS C:\youling\projects\im-parrot\examples> go build -o example.exe main.go
@@ -202,7 +202,7 @@ PS C:\youling\projects\im-parrot\examples> go build -o example.exe main.go
 
 1. **导入包**
    ```go
-   import imparrot "github.com/youling/im-parrot"
+   import imparrot "github.com/JiSuanSiWeiShiXun/parrot"
    ```
 
 2. **创建客户端**

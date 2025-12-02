@@ -5,11 +5,11 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/youling/im-parrot/dingtalk"
-	"github.com/youling/im-parrot/lark"
-	"github.com/youling/im-parrot/telegram"
-	"github.com/youling/im-parrot/types"
-	"github.com/youling/im-parrot/wechat"
+	"github.com/JiSuanSiWeiShiXun/parrot/dingtalk"
+	"github.com/JiSuanSiWeiShiXun/parrot/lark"
+	"github.com/JiSuanSiWeiShiXun/parrot/telegram"
+	"github.com/JiSuanSiWeiShiXun/parrot/types"
+	"github.com/JiSuanSiWeiShiXun/parrot/wechat"
 )
 
 // Platform constants
@@ -42,6 +42,12 @@ func NewIMClient(platform string, config types.Config) (types.IMParrot, error) {
 		Timeout: 30 * time.Second,
 	}
 
+	return createClientWithHTTP(platform, config, httpClient)
+}
+
+// createClientWithHTTP creates a client with a specific HTTP client
+// This is used by both NewIMClient and ClientPool
+func createClientWithHTTP(platform string, config types.Config, httpClient *http.Client) (types.IMParrot, error) {
 	// Factory method - create different implementations based on platform
 	switch platform {
 	case PlatformLark:

@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"log"
 
-	imparrot "github.com/youling/im-parrot"
-	"github.com/youling/im-parrot/dingtalk"
-	"github.com/youling/im-parrot/lark"
-	"github.com/youling/im-parrot/types"
-	"github.com/youling/im-parrot/wechat"
+	imparrot "github.com/JiSuanSiWeiShiXun/parrot"
+	"github.com/JiSuanSiWeiShiXun/parrot/dingtalk"
+	"github.com/JiSuanSiWeiShiXun/parrot/lark"
+	"github.com/JiSuanSiWeiShiXun/parrot/types"
+	"github.com/JiSuanSiWeiShiXun/parrot/wechat"
 )
 
 func main() {
