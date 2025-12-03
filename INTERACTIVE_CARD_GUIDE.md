@@ -25,7 +25,7 @@
 已在 `lark_test.go` 中实现，运行测试：
 
 ```bash
-go test -v -run TestPirrotLarkInteractiveCard
+go test -v -run TestParrotLarkInteractiveCard
 ```
 
 卡片包含：
@@ -245,7 +245,7 @@ Content-Type: application/json
 
 1. **发送卡片**
    ```bash
-   go test -v -run TestPirrotLarkInteractiveCard
+   go test -v -run TestParrotLarkInteractiveCard
    ```
 
 2. **启动回调服务器**
