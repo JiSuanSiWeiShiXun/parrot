@@ -44,8 +44,8 @@ func main() {
 			botKey:   "lark:bot1",
 			platform: imparrot.PlatformLark,
 			config: &lark.Config{
-				AppID:     "cli_a3b23fdb2438d00c",
-				AppSecret: "fAX5un2l0S9ZcuIjoruDie1ilrKWYoDJ",
+				AppID:     "app_id",
+				AppSecret: "app_secret",
 			},
 			userID:  "ou_9b1df8208ac284e95151b6e938115234",
 			message: "Hello from bot1!",
@@ -101,8 +101,8 @@ func main() {
 
 	// This will reuse the existing lark:bot1 client (no new HTTP connections)
 	client, err := pool.GetOrCreate(ctx, "lark:bot1", imparrot.PlatformLark, &lark.Config{
-		AppID:     "cli_a3b23fdb2438d00c",
-		AppSecret: "fAX5un2l0S9ZcuIjoruDie1ilrKWYoDJ",
+		AppID:     "app_id",
+		AppSecret: "app_secret",
 	})
 	if err != nil {
 		log.Printf("Failed to get client: %v", err)
@@ -135,7 +135,7 @@ func main() {
 	fmt.Println("\n=== Example 4: Direct Client Usage (Manual Management) ===")
 
 	// If you're only using a single bot, you can create and manage it directly
-	directClient, err := imparrot.NewLarkClient("cli_a3b23fdb2438d00c", "fAX5un2l0S9ZcuIjoruDie1ilrKWYoDJ")
+	directClient, err := imparrot.NewLarkClient("app_id", "app_secret")
 	if err != nil {
 		log.Printf("Failed to create direct client: %v", err)
 	} else {
