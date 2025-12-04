@@ -1,16 +1,25 @@
 # 飞书消息类型使用指南
 
-本文档详细说明了 Parrot 库支持的三种飞书消息类型及其使用方法。
+本文档详细说明了 Parrot 库支持的所有飞书消息类型及其使用方法。
 
 ## 消息类型概览
 
-Parrot 支持三种主要的飞书消息类型：
+Parrot 支持以下飞书消息类型：
 
 | 类型 | 常量 | 说明 | API msg_type |
 |------|------|------|--------------|
 | 文本消息 | `types.MessageTypeText` | 支持基本格式化标签 | `text` |
-| 富文本消息 | `types.MessageTypeMarkdown` | 支持 Markdown 语法 | `post` |
+| 富文本消息(简化) | `types.MessageTypeMarkdown` | 支持 Markdown 语法，自动包装 | `post` |
+| 富文本消息(原始) | `types.MessageTypePost` | 原始 post 格式，需完整 JSON | `post` |
+| 图片消息 | `types.MessageTypeImage` | 发送图片 | `image` |
 | 卡片消息 | `types.MessageTypeCard` | 交互式卡片 | `interactive` |
+| 群名片 | `types.MessageTypeShareChat` | 分享群聊 | `share_chat` |
+| 用户名片 | `types.MessageTypeShareUser` | 分享用户 | `share_user` |
+| 音频消息 | `types.MessageTypeAudio` | 发送音频 | `audio` |
+| 视频消息 | `types.MessageTypeMedia` | 发送视频 | `media` |
+| 文件消息 | `types.MessageTypeFile` | 发送文件 | `file` |
+| 表情包 | `types.MessageTypeSticker` | 发送表情包 | `sticker` |
+| 系统消息 | `types.MessageTypeSystem` | 系统分割线 | `system` |
 
 ## 1. 文本消息 (Text)
 
@@ -323,9 +332,226 @@ msg := &types.Message{
 | 场景 | 推荐类型 | 原因 |
 |------|---------|------|
 | 简单通知 | Text | 轻量、简洁 |
-| 需要格式化的文档 | Post/Markdown | 支持丰富的 Markdown 语法 |
+| 需要格式化的文档 | Markdown/Post | 支持丰富的 Markdown 语法 |
+| 需要精确控制格式 | Post (原始) | 完全控制富文本结构 |
 | 需要用户交互 | Card | 支持按钮、表单等交互元素 |
 | 需要精美排版 | Card | 提供更灵活的布局控制 |
+| 分享群聊或用户 | ShareChat/ShareUser | 专用名片格式 |
+| 发送媒体文件 | Image/Audio/Media/File | 媒体资源 |
+
+## 4. 图片消息 (Image)
+
+发送图片需要先通过[上传图片接口](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/im-v1/image/create)获取 `image_key`。
+
+```go
+// 构造图片消息内容
+content := map[string]string{
+    "image_key": "img_7ea74629-9191-4176-998c-2e603c9c5e8g",
+}
+contentJSON, _ := json.Marshal(content)
+
+msg := &types.Message{
+    Type:    types.MessageTypeImage,
+    Content: string(contentJSON),
+}
+```
+
+## 5. 原始富文本消息 (Post)
+
+如果需要精确控制富文本格式，可以使用 `MessageTypePost` 提供完整的 post JSON 结构。
+
+### 支持的标签
+
+- `text`: 文本标签，支持样式（bold, underline, lineThrough, italic）
+- `a`: 超链接标签
+- `at`: @提到用户
+- `img`: 图片标签
+- `media`: 视频标签
+- `emotion`: 表情标签
+- `code_block`: 代码块标签
+- `hr`: 分隔线标签
+- `md`: Markdown 标签
+
+### 示例
+
+```go
+postContent := map[string]interface{}{
+    "zh_cn": map[string]interface{}{
+        "title": "项目通知",
+        "content": [][]map[string]interface{}{
+            { // 第一段
+                {
+                    "tag":   "text",
+                    "text":  "第一行：",
+                    "style": []string{"bold", "underline"},
+                },
+                {
+                    "tag":   "a",
+                    "href":  "https://open.feishu.cn",
+                    "text":  "飞书开放平台",
+                    "style": []string{"bold", "italic"},
+                },
+            },
+            { // 第二段
+                {
+                    "tag":  "text",
+                    "text": "第二行文本",
+                },
+            },
+            { // 分隔线
+                {
+                    "tag": "hr",
+                },
+            },
+            { // 代码块
+                {
+                    "tag":      "code_block",
+                    "language": "GO",
+                    "text":     "func main() {\n    fmt.Println(\"Hello\")\n}",
+                },
+            },
+        },
+    },
+}
+contentJSON, _ := json.Marshal(postContent)
+
+msg := &types.Message{
+    Type:    types.MessageTypePost,
+    Content: string(contentJSON),
+}
+```
+
+## 6. 群名片消息 (ShareChat)
+
+分享群聊名片。机器人必须在要分享的群中。
+
+```go
+content := map[string]string{
+    "chat_id": "oc_0dd200d32fda15216d2c2ef1ddb32f76",
+}
+contentJSON, _ := json.Marshal(content)
+
+msg := &types.Message{
+    Type:    types.MessageTypeShareChat,
+    Content: string(contentJSON),
+}
+```
+
+## 7. 用户名片消息 (ShareUser)
+
+分享用户名片。`user_id` 只支持设置用户的 `open_id`，且用户需要在机器人的可用范围内。
+
+```go
+content := map[string]string{
+    "user_id": "ou_0dd200d32fda15216d2c2ef1ddb32f76",
+}
+contentJSON, _ := json.Marshal(content)
+
+msg := &types.Message{
+    Type:    types.MessageTypeShareUser,
+    Content: string(contentJSON),
+}
+```
+
+## 8. 音频消息 (Audio)
+
+发送音频需要先通过[上传文件接口](https://open.feishu.cn/document/uAjLw4CM/ukTMukTMukTM/reference/im-v1/file/create)获取 `file_key`。
+
+```go
+content := map[string]string{
+    "file_key": "75235e0c-4f92-430a-a99b-8446610223cg",
+}
+contentJSON, _ := json.Marshal(content)
+
+msg := &types.Message{
+    Type:    types.MessageTypeAudio,
+    Content: string(contentJSON),
+}
+```
+
+## 9. 视频消息 (Media)
+
+发送视频需要先上传视频文件（mp4 格式）获取 `file_key`，可选配置视频封面 `image_key`。
+
+```go
+content := map[string]string{
+    "file_key":  "file_v2_0dcdd7d9-fib0-4432-a519-41d25aca542j",
+    "image_key": "img_7ea74629-9191-4176-998c-2e603c9c5e8g", // 可选
+}
+contentJSON, _ := json.Marshal(content)
+
+msg := &types.Message{
+    Type:    types.MessageTypeMedia,
+    Content: string(contentJSON),
+}
+```
+
+## 10. 文件消息 (File)
+
+发送文件需要先通过上传文件接口获取 `file_key`。
+
+```go
+content := map[string]string{
+    "file_key": "75235e0c-4f92-430a-a99b-8446610223cg",
+}
+contentJSON, _ := json.Marshal(content)
+
+msg := &types.Message{
+    Type:    types.MessageTypeFile,
+    Content: string(contentJSON),
+}
+```
+
+## 11. 表情包消息 (Sticker)
+
+目前仅支持发送机器人接收到的表情包，通过接收消息事件获取 `file_key`。
+
+```go
+content := map[string]string{
+    "file_key": "75235e0c-4f92-430a-a99b-8446610223cg",
+}
+contentJSON, _ := json.Marshal(content)
+
+msg := &types.Message{
+    Type:    types.MessageTypeSticker,
+    Content: string(contentJSON),
+}
+```
+
+## 12. 系统消息 (System)
+
+系统消息用于在单聊中显示分割线。需要使用 `tenant_access_token` 并具有相应权限。
+
+```go
+systemContent := map[string]interface{}{
+    "type": "divider",
+    "params": map[string]interface{}{
+        "divider_text": map[string]interface{}{
+            "text": "新会话",
+            "i18n_text": map[string]string{
+                "zh_CN": "新会话",
+                "en_US": "New Session",
+            },
+        },
+    },
+    "options": map[string]bool{
+        "need_rollup": true, // 是否滚动清屏
+    },
+}
+contentJSON, _ := json.Marshal(systemContent)
+
+msg := &types.Message{
+    Type:    types.MessageTypeSystem,
+    Content: string(contentJSON),
+}
+```
+
+**注意事项**：
+- 仅支持在单聊（p2p）中使用
+- 需要飞书客户端 V7.20 或以上版本
+- 文本长度不能超过 20 个字符或 10 个汉字
+
+## 消息类型选择建议
 
 ## API 参考
 

@@ -252,7 +252,7 @@ func (c *Client) sendToSingleTarget(ctx context.Context, msg *types.Message, tar
 		// For simplicity, we wrap the content in a md tag which supports markdown syntax
 		postContent := map[string]interface{}{
 			"zh_cn": map[string]interface{}{
-				"title": "消息",
+				"title": "",
 				"content": [][]map[string]interface{}{
 					{
 						{
@@ -266,10 +266,46 @@ func (c *Client) sendToSingleTarget(ctx context.Context, msg *types.Message, tar
 		contentBytes, _ := json.Marshal(postContent)
 		content = string(contentBytes)
 		msgType = "post"
+	case types.MessageTypePost:
+		// Raw post format - user provides complete post JSON structure
+		content = msg.Content
+		msgType = "post"
+	case types.MessageTypeImage:
+		// Image message - content should be {"image_key": "img_xxx"}
+		content = msg.Content
+		msgType = "image"
 	case types.MessageTypeCard:
 		// Interactive card - content should be the card JSON
 		content = msg.Content
 		msgType = "interactive"
+	case types.MessageTypeShareChat:
+		// Share chat card - content should be {"chat_id": "oc_xxx"}
+		content = msg.Content
+		msgType = "share_chat"
+	case types.MessageTypeShareUser:
+		// Share user card - content should be {"user_id": "ou_xxx"}
+		content = msg.Content
+		msgType = "share_user"
+	case types.MessageTypeAudio:
+		// Audio message - content should be {"file_key": "file_xxx"}
+		content = msg.Content
+		msgType = "audio"
+	case types.MessageTypeMedia:
+		// Video message - content should be {"file_key": "file_xxx", "image_key": "img_xxx"}
+		content = msg.Content
+		msgType = "media"
+	case types.MessageTypeFile:
+		// File message - content should be {"file_key": "file_xxx"}
+		content = msg.Content
+		msgType = "file"
+	case types.MessageTypeSticker:
+		// Sticker message - content should be {"file_key": "file_xxx"}
+		content = msg.Content
+		msgType = "sticker"
+	case types.MessageTypeSystem:
+		// System message - content should be complete system message JSON
+		content = msg.Content
+		msgType = "system"
 	default:
 		content = msg.Content
 		msgType = string(msg.Type)

@@ -9,9 +9,18 @@ import (
 type MessageType string
 
 const (
-	MessageTypeText     MessageType = "text"
-	MessageTypeMarkdown MessageType = "markdown"
-	MessageTypeCard     MessageType = "card"
+	MessageTypeText      MessageType = "text"       // 文本消息
+	MessageTypeMarkdown  MessageType = "markdown"   // 富文本消息 (飞书 post 格式)
+	MessageTypePost      MessageType = "post"       // 富文本消息 (飞书 用json定义的富文本格式)
+	MessageTypeImage     MessageType = "image"      // 图片消息
+	MessageTypeCard      MessageType = "card"       // 交互式卡片
+	MessageTypeShareChat MessageType = "share_chat" // 群名片
+	MessageTypeShareUser MessageType = "share_user" // 用户名片
+	MessageTypeAudio     MessageType = "audio"      // 音频消息
+	MessageTypeMedia     MessageType = "media"      // 视频消息
+	MessageTypeFile      MessageType = "file"       // 文件消息
+	MessageTypeSticker   MessageType = "sticker"    // 表情包
+	MessageTypeSystem    MessageType = "system"     // 系统消息
 )
 
 // ChatType defines the type of chat
