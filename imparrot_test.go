@@ -6,6 +6,7 @@ import (
 
 	imparrot "github.com/JiSuanSiWeiShiXun/parrot"
 	"github.com/JiSuanSiWeiShiXun/parrot/telegram"
+	"github.com/JiSuanSiWeiShiXun/parrot/types"
 )
 
 // TestStrategyPattern demonstrates the strategy pattern
@@ -94,16 +95,15 @@ func TestMessageTypes(t *testing.T) {
 
 // TestSendOptions tests send options structure
 func TestSendOptions(t *testing.T) {
-	opts := &imparrot.SendOptions{
-		ChatType: imparrot.ChatTypePrivate,
-		Target:   "user123",
-		AtUsers:  []string{"user1", "user2"},
+	opts := &types.SendOptions{
+		Targets: []types.Target{{ID: "user123", ChatType: types.ChatTypePrivate}},
+		AtUsers: []string{"user1", "user2"},
 		Extra: map[string]interface{}{
 			"priority": "high",
 		},
 	}
 
-	if opts.ChatType != imparrot.ChatTypePrivate {
+	if opts.Targets[0].ChatType != types.ChatTypePrivate {
 		t.Error("ChatType should be private")
 	}
 	if len(opts.AtUsers) != 2 {

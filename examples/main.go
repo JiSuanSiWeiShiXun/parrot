@@ -50,10 +50,7 @@ func main() {
 			Content: "Hello from Lark Webhook! 这是通过群机器人 Webhook 发送的消息",
 		}
 		// Webhook 模式不需要指定 target，消息会发到配置了该 webhook 的群
-		opts := &types.SendOptions{
-			ChatType: types.ChatTypeGroup,
-			Target:   "", // Webhook 模式忽略此参数
-		}
+		opts := &types.SendOptions{}
 		if err := larkWebhookClient.SendMessage(ctx, msg, opts); err != nil {
 			log.Printf("Failed to send Lark webhook message: %v", err)
 			log.Printf("提示: 请在飞书群聊中添加机器人，获取 Webhook URL")
@@ -94,9 +91,8 @@ func main() {
 			Content: "## Hello from DingTalk\n\nThis is a **markdown** message!",
 		}
 		opts := &types.SendOptions{
-			ChatType: types.ChatTypeGroup,
-			Target:   "webhook-group",
-			AtUsers:  []string{"138xxxxxxxx"}, // Phone numbers to mention
+			Targets: []types.Target{{ID: "webhook-group", ChatType: types.ChatTypeGroup}},
+			AtUsers: []string{"138xxxxxxxx"}, // Phone numbers to mention
 		}
 		if err := dingTalkClient.SendMessage(ctx, msg, opts); err != nil {
 			log.Printf("Failed to send DingTalk message: %v", err)
@@ -156,8 +152,7 @@ func demonstrateStrategyPattern(ctx context.Context) {
 
 		// Same interface, different implementations
 		opts := &types.SendOptions{
-			ChatType: types.ChatTypePrivate,
-			Target:   "test-user",
+			Targets: []types.Target{{ID: "test-user", ChatType: types.ChatTypePrivate}},
 		}
 
 		if err := client.SendMessage(ctx, msg, opts); err != nil {

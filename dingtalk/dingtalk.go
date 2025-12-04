@@ -91,6 +91,9 @@ func (c *Client) SendMessage(ctx context.Context, msg *types.Message, opts *type
 		return fmt.Errorf("message and options cannot be nil")
 	}
 
+	// DingTalk webhook doesn't support multiple targets, but we still check
+	// Note: For DingTalk, all messages go to the same webhook, so no retry needed for multiple targets
+
 	// Build webhook URL with signature
 	timestamp := time.Now().UnixMilli()
 	webhookURL := fmt.Sprintf("%s?access_token=%s", c.webhookURL, c.config.AccessToken)
@@ -114,7 +117,7 @@ func (c *Client) SendMessage(ctx context.Context, msg *types.Message, opts *type
 		}
 
 		// Add @ mentions for group messages
-		if opts.ChatType == types.ChatTypeGroup && len(opts.AtUsers) > 0 {
+		if len(opts.AtUsers) > 0 {
 			reqBody["at"] = map[string]interface{}{
 				"atMobiles": opts.AtUsers,
 				"isAtAll":   false,
@@ -130,7 +133,7 @@ func (c *Client) SendMessage(ctx context.Context, msg *types.Message, opts *type
 			},
 		}
 
-		if opts.ChatType == types.ChatTypeGroup && len(opts.AtUsers) > 0 {
+		if len(opts.AtUsers) > 0 {
 			reqBody["at"] = map[string]interface{}{
 				"atMobiles": opts.AtUsers,
 				"isAtAll":   false,
@@ -192,8 +195,7 @@ func (c *Client) SendPrivateMessage(ctx context.Context, userID string, msg *typ
 // SendGroupMessage sends a message to a group
 func (c *Client) SendGroupMessage(ctx context.Context, groupID string, msg *types.Message) error {
 	return c.SendMessage(ctx, msg, &types.SendOptions{
-		ChatType: types.ChatTypeGroup,
-		Target:   groupID,
+		Targets: []types.Target{{ID: groupID, ChatType: types.ChatTypeGroup}},
 	})
 }
 

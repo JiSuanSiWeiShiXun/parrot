@@ -168,12 +168,63 @@ func (c *Client) SendMessage(ctx context.Context, msg *types.Message, opts *type
 		return fmt.Errorf("message and options cannot be nil")
 	}
 
-	// If webhook URL is configured, use webhook mode
+	// If webhook URL is configured, use webhook mode (doesn't require targets)
 	if c.config.WebhookURL != "" {
 		return c.sendViaWebhook(ctx, msg, opts)
 	}
 
-	// Otherwise, use standard API mode
+	// For standard API mode, at least one target is required
+	if len(opts.Targets) == 0 {
+		return fmt.Errorf("at least one target is required")
+	}
+
+	// Send to multiple targets with retry
+	const maxRetries = 3
+	failedTargets := make([]types.FailedTarget, 0)
+	successCount := 0
+
+	for _, target := range opts.Targets {
+		var lastErr error
+		sent := false
+
+		// Retry up to maxRetries times for each target
+		for retry := 0; retry < maxRetries; retry++ {
+			if err := c.sendToSingleTarget(ctx, msg, target); err != nil {
+				lastErr = err
+				// Wait a bit before retrying (exponential backoff)
+				if retry < maxRetries-1 {
+					time.Sleep(time.Duration(100*(retry+1)) * time.Millisecond)
+				}
+			} else {
+				sent = true
+				successCount++
+				break
+			}
+		}
+
+		// Record failed target after all retries exhausted
+		if !sent {
+			failedTargets = append(failedTargets, types.FailedTarget{
+				Target: target,
+				Error:  lastErr,
+			})
+		}
+	}
+
+	// Return error with failed targets information
+	if len(failedTargets) > 0 {
+		return &types.SendError{
+			FailedTargets: failedTargets,
+			SuccessCount:  successCount,
+			TotalCount:    len(opts.Targets),
+		}
+	}
+
+	return nil
+}
+
+// sendToSingleTarget sends a message to a single target
+func (c *Client) sendToSingleTarget(ctx context.Context, msg *types.Message, target types.Target) error {
 	token, err := c.getToken(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to get access token: %w", err)
@@ -181,7 +232,7 @@ func (c *Client) SendMessage(ctx context.Context, msg *types.Message, opts *type
 
 	// Determine receive_id_type based on chat type
 	receiveIDType := "open_id"
-	if opts.ChatType == types.ChatTypeGroup {
+	if target.ChatType == types.ChatTypeGroup {
 		receiveIDType = "chat_id"
 	}
 
@@ -190,13 +241,29 @@ func (c *Client) SendMessage(ctx context.Context, msg *types.Message, opts *type
 	var msgType string
 	switch msg.Type {
 	case types.MessageTypeText:
+		// Text message - supports line breaks, @mentions, style tags, and hyperlinks
 		contentMap := map[string]string{"text": msg.Content}
 		contentBytes, _ := json.Marshal(contentMap)
 		content = string(contentBytes)
 		msgType = "text"
 	case types.MessageTypeMarkdown:
-		contentMap := map[string]string{"text": msg.Content}
-		contentBytes, _ := json.Marshal(contentMap)
+		// Post (rich text) message - supports markdown-like syntax
+		// Content should be provided in rich text post format with zh_cn/en_us
+		// For simplicity, we wrap the content in a md tag which supports markdown syntax
+		postContent := map[string]interface{}{
+			"zh_cn": map[string]interface{}{
+				"title": "消息",
+				"content": [][]map[string]interface{}{
+					{
+						{
+							"tag":  "md",
+							"text": msg.Content,
+						},
+					},
+				},
+			},
+		}
+		contentBytes, _ := json.Marshal(postContent)
 		content = string(contentBytes)
 		msgType = "post"
 	case types.MessageTypeCard:
@@ -209,7 +276,7 @@ func (c *Client) SendMessage(ctx context.Context, msg *types.Message, opts *type
 	}
 
 	reqBody := map[string]interface{}{
-		"receive_id": opts.Target,
+		"receive_id": target.ID,
 		"msg_type":   msgType,
 		"content":    content,
 	}
@@ -256,6 +323,7 @@ func (c *Client) SendMessage(ctx context.Context, msg *types.Message, opts *type
 }
 
 // sendViaWebhook sends a message via webhook URL
+// 用不着opts
 func (c *Client) sendViaWebhook(ctx context.Context, msg *types.Message, opts *types.SendOptions) error {
 	// Build webhook message body
 	var reqBody map[string]interface{}
@@ -268,8 +336,8 @@ func (c *Client) sendViaWebhook(ctx context.Context, msg *types.Message, opts *t
 				"text": msg.Content,
 			},
 		}
-	case types.MessageTypeMarkdown, types.MessageTypeCard:
-		// For markdown and interactive cards
+	case types.MessageTypeMarkdown:
+		// For markdown, wrap in card format
 		reqBody = map[string]interface{}{
 			"msg_type": "interactive",
 			"card": map[string]interface{}{
@@ -280,6 +348,17 @@ func (c *Client) sendViaWebhook(ctx context.Context, msg *types.Message, opts *t
 					},
 				},
 			},
+		}
+	case types.MessageTypeCard:
+		// For interactive cards, the content should be the complete card JSON
+		// Parse the card JSON from msg.Content
+		var cardData map[string]interface{}
+		if err := json.Unmarshal([]byte(msg.Content), &cardData); err != nil {
+			return fmt.Errorf("invalid card JSON: %w", err)
+		}
+		reqBody = map[string]interface{}{
+			"msg_type": "interactive",
+			"card":     cardData,
 		}
 	default:
 		reqBody = map[string]interface{}{
@@ -338,16 +417,14 @@ func (c *Client) sendViaWebhook(ctx context.Context, msg *types.Message, opts *t
 // SendPrivateMessage sends a private message to a user
 func (c *Client) SendPrivateMessage(ctx context.Context, userID string, msg *types.Message) error {
 	return c.SendMessage(ctx, msg, &types.SendOptions{
-		ChatType: types.ChatTypePrivate,
-		Target:   userID,
+		Targets: []types.Target{{ID: userID, ChatType: types.ChatTypePrivate}},
 	})
 }
 
 // SendGroupMessage sends a message to a group
 func (c *Client) SendGroupMessage(ctx context.Context, groupID string, msg *types.Message) error {
 	return c.SendMessage(ctx, msg, &types.SendOptions{
-		ChatType: types.ChatTypeGroup,
-		Target:   groupID,
+		Targets: []types.Target{{ID: groupID, ChatType: types.ChatTypeGroup}},
 	})
 }
 

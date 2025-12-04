@@ -1,6 +1,9 @@
 package types
 
-import "context"
+import (
+	"context"
+	"fmt"
+)
 
 // MessageType defines the type of message
 type MessageType string
@@ -26,12 +29,43 @@ type Message struct {
 	Data    map[string]interface{} // Additional platform-specific data
 }
 
+// Target represents a message destination
+type Target struct {
+	ID       string   // User ID or Group ID
+	ChatType ChatType // Private or group chat
+}
+
 // SendOptions contains options for sending messages
 type SendOptions struct {
-	ChatType ChatType               // Private or group chat
-	Target   string                 // User ID or Group ID
-	AtUsers  []string               // Users to @ mention (for group messages)
-	Extra    map[string]interface{} // Platform-specific extra options
+	Targets []Target               // Multiple targets with their chat types
+	AtUsers []string               // Users to @ mention (for group messages)
+	Extra   map[string]interface{} // Platform-specific extra options
+}
+
+// FailedTarget represents a target that failed to receive a message
+type FailedTarget struct {
+	Target Target // The target that failed
+	Error  error  // The error that occurred
+}
+
+func (ft FailedTarget) String() string {
+	return fmt.Sprintf("{Target: %v, Error: %v}", ft.Target, ft.Error)
+}
+
+// SendError is returned when some targets fail to receive messages
+type SendError struct {
+	FailedTargets []FailedTarget // List of targets that failed
+	SuccessCount  int            // Number of successful sends
+	TotalCount    int            // Total number of targets
+}
+
+// Error implements the error interface
+func (e *SendError) Error() string {
+	failedInfos := ""
+	for _, ft := range e.FailedTargets {
+		failedInfos += ft.String() + "; "
+	}
+	return fmt.Sprintf("failed to send to %d/%d targets, failed targets: %v", len(e.FailedTargets), e.TotalCount, failedInfos)
 }
 
 // IMParrot is the unified interface for all IM platforms

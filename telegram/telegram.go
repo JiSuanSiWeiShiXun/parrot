@@ -79,9 +79,60 @@ func (c *Client) SendMessage(ctx context.Context, msg *types.Message, opts *type
 		return fmt.Errorf("message and options cannot be nil")
 	}
 
+	if len(opts.Targets) == 0 {
+		return fmt.Errorf("at least one target is required")
+	}
+
+	// Send to multiple targets with retry
+	const maxRetries = 3
+	failedTargets := make([]types.FailedTarget, 0)
+	successCount := 0
+
+	for _, target := range opts.Targets {
+		var lastErr error
+		sent := false
+
+		// Retry up to maxRetries times for each target
+		for retry := 0; retry < maxRetries; retry++ {
+			if err := c.sendToSingleTarget(ctx, msg, target); err != nil {
+				lastErr = err
+				// Wait a bit before retrying (exponential backoff)
+				if retry < maxRetries-1 {
+					time.Sleep(time.Duration(100*(retry+1)) * time.Millisecond)
+				}
+			} else {
+				sent = true
+				successCount++
+				break
+			}
+		}
+
+		// Record failed target after all retries exhausted
+		if !sent {
+			failedTargets = append(failedTargets, types.FailedTarget{
+				Target: target,
+				Error:  lastErr,
+			})
+		}
+	}
+
+	// Return error with failed targets information
+	if len(failedTargets) > 0 {
+		return &types.SendError{
+			FailedTargets: failedTargets,
+			SuccessCount:  successCount,
+			TotalCount:    len(opts.Targets),
+		}
+	}
+
+	return nil
+}
+
+// sendToSingleTarget sends a message to a single target
+func (c *Client) sendToSingleTarget(ctx context.Context, msg *types.Message, target types.Target) error {
 	// Build request body
 	reqBody := map[string]interface{}{
-		"chat_id": opts.Target,
+		"chat_id": target.ID,
 	}
 
 	// Set message content based on type
@@ -144,16 +195,14 @@ func (c *Client) SendMessage(ctx context.Context, msg *types.Message, opts *type
 // SendPrivateMessage sends a private message to a user
 func (c *Client) SendPrivateMessage(ctx context.Context, userID string, msg *types.Message) error {
 	return c.SendMessage(ctx, msg, &types.SendOptions{
-		ChatType: types.ChatTypePrivate,
-		Target:   userID,
+		Targets: []types.Target{{ID: userID, ChatType: types.ChatTypePrivate}},
 	})
 }
 
 // SendGroupMessage sends a message to a group
 func (c *Client) SendGroupMessage(ctx context.Context, groupID string, msg *types.Message) error {
 	return c.SendMessage(ctx, msg, &types.SendOptions{
-		ChatType: types.ChatTypeGroup,
-		Target:   groupID,
+		Targets: []types.Target{{ID: groupID, ChatType: types.ChatTypeGroup}},
 	})
 }
 
