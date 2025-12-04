@@ -373,7 +373,8 @@ func (c *Client) sendViaWebhook(ctx context.Context, msg *types.Message, opts *t
 			},
 		}
 	case types.MessageTypeMarkdown:
-		// For markdown, wrap in card format
+		// Webhook 使用 card 消息类型,在 elements 中使用 markdown 富文本组件
+		// 参考: https://open.feishu.cn/document/feishu-cards/card-components/content-components/rich-text
 		reqBody = map[string]interface{}{
 			"msg_type": "interactive",
 			"card": map[string]interface{}{

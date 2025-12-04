@@ -14,7 +14,7 @@ type (
 	Config      = types.Config
 )
 
-// Re-export constants
+// Re-export popular constants
 const (
 	MessageTypeText     = types.MessageTypeText
 	MessageTypeMarkdown = types.MessageTypeMarkdown
